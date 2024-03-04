@@ -1,8 +1,8 @@
 export default (error,req,res,next)=>{
-    error.statuCode=error.statuCode || 500;
+    error.statusCode=error.statusCode || 500;
     error.status=error.status ||'error';
-    res.status(error.statuCode).json({
-        status:statuCode,
-        mesage:error.mesage
+    return res.status(error.statusCode).json({
+        status:statusCode,
+        message:error.message
     })
 }

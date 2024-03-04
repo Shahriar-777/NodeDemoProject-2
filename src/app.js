@@ -12,4 +12,12 @@ app.use(express.static("public"));
 app.use(cookieParser());
 app.use(globalErrorHandler);
 
+
+//routes import 
+import userRouter from './routes/user.Routes.js';
+
+//routes decleration
+
+app.use('/api/v1/users',userRouter);
+
 export default app;
