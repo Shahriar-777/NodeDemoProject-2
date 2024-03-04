@@ -243,4 +243,33 @@ const refreshAccessToken=asyncHandler(async(req,res,next)=>{
 })
 
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken};
+const changeCurrentPassword=asyncHandler(async(req,res,next)=>{
+   const {oldPassword,newPassword}=req.body;
+   if(!(oldPassword && newPassword))
+   {
+      const error=new customError("All fileds are required",401);
+      next(error);
+   }
+
+   const user=await User.findById(req.user?.id);
+    
+   const  isPasswordCorrect=await user.isPasswordCorrect(oldPassword);
+   if(!isPasswordCorrect)
+   {
+      const error=new customError("Invalid old Password",400);
+      next(error);
+   }
+
+   user.password=newPassword;
+
+   await user.save({ validateBeforeSave: false })
+
+   return res
+    .status(200)
+    .json(new apiResponse(200, {}, "Password changed successfully"))
+
+})
+
+
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword};
