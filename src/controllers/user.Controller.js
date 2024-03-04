@@ -8,7 +8,7 @@ const registerUser=asyncHandler(async (req,res,next)=>{
 
      //get user details from frontend
      const {fullname,email,username,password}=req.body;
-     if([fullname,email,username,password].some(filed=>filed?.trim()===""))
+     if (!fullname || !email || !username || !password) 
      {
         const error=new customError('All fileds are required',404);
         next(error);
@@ -27,8 +27,12 @@ const registerUser=asyncHandler(async (req,res,next)=>{
 
    
    const avaterLocalPath=req.files?.avatar[0]?.path;
-   const coverImageLocalPath=req.files?.coverImage[0]?.path;
-   
+   //const coverImageLocalPath=req.files?.coverImage[0]?.path;
+   let coverImageLocalPath;
+   if(req.files && Array.isArray(req.files.coverImage)&& req.files.coverImage.length>0)
+   {
+      coverImageLocalPath=req.files?.coverImage[0]?.path;
+   }
 
 
    if(!avaterLocalPath)
