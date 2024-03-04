@@ -4,6 +4,29 @@ import User from "../models/user.models.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 
+
+//generateAccessAndRefereshToken
+const generateAccessAndRefereshToken=async (userId)=>{
+     try{
+           const user=await User.findById(userId);
+           const accessToken=await user.generateAccessToken();
+           const refreshToken=await user.generateRefreshToken();
+
+           user.refreshToken=refreshToken;
+           await user.save({ validateBeforeSave: false })
+
+           return {accessToken,refreshToken};
+     }
+     catch(error)
+     {
+        console.log("something went wrong while generate access token and refresh token");
+     }
+}
+
+
+
+//register user Controller
+
 const registerUser=asyncHandler(async (req,res,next)=>{
 
      //get user details from frontend
@@ -80,4 +103,100 @@ const registerUser=asyncHandler(async (req,res,next)=>{
 })
 
 
-export {registerUser};
+
+
+
+//user Login Controller
+
+const loginUser=asyncHandler(async(req,res,next)=>{
+//req.body   data
+
+const {email,username,password}=req.body;
+
+
+if(!(email || username))
+{
+   const error=new customError("All fields are required",401);
+   next(error);
+}
+
+//find the user
+
+const existedUser=await User.findOne({$or:[{username},{email}]})
+
+   if(!existedUser)
+   {
+    const error=new customError('user was not register',404);
+      next(error);
+   }
+
+//password check
+  const isPasswordValid= await existedUser.isPasswordCorrect(password);
+  
+if(!isPasswordValid)
+{
+   const error=new customError('invalid credentials',404);
+      next(error);
+}
+
+// access and refresh token
+
+const{accessToken,refreshToken}=await generateAccessAndRefereshToken(existedUser._id);
+
+
+
+//update user after generated tokens
+const loggedInUser= await User.findById(existedUser._id).select("-password -refreshToken");
+
+//send cookies
+const options={
+   httpOnly:true,
+   secure:true
+}
+
+
+
+//response
+
+res.status(200)
+.cookie("accessToken",accessToken,options)
+.cookie("refreshToken",refreshToken,options)
+.json( new apiResponse(200,{loggedInUser,accessToken,refreshToken},"User Register Successfully"))
+
+})
+
+
+
+
+//LogOut
+
+const logoutUser=asyncHandler(async(req,res,next)=>{
+//update database 
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1 // this removes the field from document
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+
+
+    //clear cookie
+    const options={
+      httpOnly:true,
+      secure:true
+   }
+
+   res.status(200)
+   .clearCookie("accessToken",options)
+   .clearCookie("refreshToken",options)
+   .json( new apiResponse(200,{},"User LogOut Successfully"))
+})
+
+
+export {registerUser,loginUser,logoutUser};
