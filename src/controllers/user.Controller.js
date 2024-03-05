@@ -280,4 +280,83 @@ const getCurrentUser = asyncHandler(async(req, res) => {
    ))
 })
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser};
+
+const updateAccountDetails=asyncHandler(async(req,res,next)=>{
+   const {fullname,email}=req.body;
+   if (!fullname || !email) {
+      next(new customError("All fields are required",400));
+  }
+
+   const user=await User.findByIdAndUpdate(req.user?._id,
+      {
+         $set:
+         {
+            fullname,email
+         }
+      },
+      {new:true}).select("-password");
+
+    res.status(200)
+    .json(new apiResponse(200, user, "Account details updated successfully"))
+
+   })
+
+   const updateUserAvatar=asyncHandler(async(req,res,next)=>{
+    
+      console.log(req.file);
+      
+      const avatarPhoto=req.file?.path;
+      if(!avatarPhoto)
+      {
+         next(new customError("Avatar file is missing",404));
+      }
+      const avatar=await uploadOnCloudinary(avatarPhoto);
+      if(!avatar.url)
+      {
+         next(new customError("Error while upload on avatar",404));
+      }
+
+      const user=await User.findByIdAndUpdate(req.user?._id,
+         {
+            $set:
+            {
+               avatar:avatar.url
+            }
+         },
+         {new:true}).select("-password");
+   
+       res.status(200)
+       .json(new apiResponse(200, user, "Account details updated successfully"))
+   
+      })
+
+
+   const updateCoverImage=asyncHandler(async(req,res,next)=>{
+      
+         const userCoverImage=req.file?.path;
+         if(!userCoverImage)
+         {
+            next(new customError("Cover image file is missing",404));
+         }
+         const coverImage=await uploadOnCloudinary(userCoverImage);
+         if(!coverImage.url)
+         {
+            next(new customError("Error while upload on coverImage",404));
+         }
+   
+         const user=await User.findByIdAndUpdate(req.user?._id,
+            {
+               $set:
+               {
+                  coverImage:coverImage.url
+               }
+            },
+            {new:true}).select("-password");
+      
+          res.status(200)
+          .json(new apiResponse(200, user, "Account details updated successfully"))
+      
+         })
+   
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateCoverImage};
